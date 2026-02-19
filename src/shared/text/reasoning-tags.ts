@@ -1,9 +1,11 @@
 export type ReasoningTagMode = "strict" | "preserve";
 export type ReasoningTagTrim = "none" | "start" | "both";
 
-const QUICK_TAG_RE = /<\s*\/?\s*(?:think(?:ing)?|thought|antthinking|final)\b/i;
-const FINAL_TAG_RE = /<\s*\/?\s*final\b[^<>]*>/gi;
-const THINKING_TAG_RE = /<\s*(\/?)\s*(?:think(?:ing)?|thought|antthinking)\b[^<>]*>/gi;
+const QUICK_TAG_RE =
+  /(?:<\s*\/?\s*(?:think(?:ing)?|thought|antthinking|final)\b|\[\[reply_to_current\]\]|\n?think\s*>)/i;
+const FINAL_TAG_RE = /(?:<\s*\/?\s*final\b[^<>]*>|\[\[reply_to_current\]\])/gi;
+const THINKING_TAG_RE =
+  /(?:<\s*(\/?)\s*(?:think(?:ing)?|thought|antthinking)\b[^<>]*>)|(?:\n?think\s*>)/gi;
 
 interface CodeRegion {
   start: number;
@@ -65,6 +67,12 @@ export function stripReasoningTagsFromText(
   const trimMode = options?.trim ?? "both";
 
   let cleaned = text;
+
+  // Handle [[reply_to_current]] marker - treat everything before it as thinking/reasoning
+  if (mode === "strict" && cleaned.includes("[[reply_to_current]]")) {
+    const parts = cleaned.split(/\[\[reply_to_current\]\]/i);
+    cleaned = parts[parts.length - 1]; // Take the final answer part
+  }
   if (FINAL_TAG_RE.test(cleaned)) {
     FINAL_TAG_RE.lastIndex = 0;
     const finalMatches: Array<{ start: number; length: number; inCode: boolean }> = [];

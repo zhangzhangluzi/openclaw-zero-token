@@ -278,6 +278,7 @@ export function setXaiApiKey(key: string, agentDir?: string) {
 export {
   SILICONFLOW_GLOBAL_DEFAULT_MODEL_REF,
   SILICONFLOW_CN_DEFAULT_MODEL_REF,
+  DEEPSEEK_WEB_DEFAULT_MODEL_REF,
 } from "./onboard-auth.models.js";
 
 export async function setSiliconFlowGlobalApiKey(key: string, agentDir?: string) {
@@ -298,6 +299,22 @@ export async function setSiliconFlowCnApiKey(key: string, agentDir?: string) {
     credential: {
       type: "api_key",
       provider: "siliconflow-cn",
+      key,
+    },
+    agentDir: resolveAuthAgentDir(agentDir),
+  });
+}
+
+export async function setDeepseekWebCookie(
+  options: { cookie: string; bearer?: string; userAgent?: string },
+  agentDir?: string,
+) {
+  const key = JSON.stringify(options);
+  upsertAuthProfile({
+    profileId: "deepseek-web:default",
+    credential: {
+      type: "api_key",
+      provider: "deepseek-web",
       key,
     },
     agentDir: resolveAuthAgentDir(agentDir),

@@ -67,16 +67,30 @@ export function extractThinking(message: unknown): string | null {
     return parts.join("\n");
   }
 
-  // Back-compat: older logs may still have <think> tags inside text blocks.
+  // Back-compat: older logs or streaming may have <think> tags inside text blocks.
   const rawText = extractRawText(message);
   if (!rawText) {
     return null;
   }
-  const matches = [
-    ...rawText.matchAll(/<\s*think(?:ing)?\s*>([\s\S]*?)<\s*\/\s*think(?:ing)?\s*>/gi),
-  ];
+
+  const thinkingRegex =
+    /(?:<\s*(?:think(?:ing)?|thought|antthinking)\b[^<>]*>|\[\[reply_to_current\]\]|\n?think\s*>)([\s\S]*?)(?:<\s*\/\s*(?:think(?:ing)?|thought|antthinking)\b[^<>]*>|\[\[reply_to_current\]\]|$)/gi;
+  const matches = [...rawText.matchAll(thinkingRegex)];
   const extracted = matches.map((m) => (m[1] ?? "").trim()).filter(Boolean);
-  return extracted.length > 0 ? extracted.join("\n") : null;
+
+  if (extracted.length === 0 && rawText.includes("[[reply_to_current]]")) {
+    const [thought] = rawText.split(/\[\[reply_to_current\]\]/i);
+    if (thought.trim()) {
+      extracted.push(thought.trim());
+    }
+  }
+
+  if (extracted.length > 0) {
+    return extracted.join("\n");
+  }
+
+  // Handle <final> or other potential markers if needed, but <think> is primary.
+  return null;
 }
 
 export function extractThinkingCached(message: unknown): string | null {

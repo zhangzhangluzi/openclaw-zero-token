@@ -32,5 +32,10 @@ export function isReasoningTagProvider(provider: string | undefined | null): boo
     return true;
   }
 
+  // Handle DeepSeek Web (it needs tags to invoke tools stably like other models)
+  if (normalized.includes("deepseek-web")) {
+    return true;
+  }
+
   return false;
 }

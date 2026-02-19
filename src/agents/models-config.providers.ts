@@ -144,6 +144,17 @@ const QIANFAN_DEFAULT_COST = {
   cacheWrite: 0,
 };
 
+export const DEEPSEEK_WEB_BASE_URL = "https://chat.deepseek.com";
+export const DEEPSEEK_WEB_DEFAULT_MODEL_ID = "deepseek-chat";
+const DEEPSEEK_WEB_DEFAULT_CONTEXT_WINDOW = 64000;
+const DEEPSEEK_WEB_DEFAULT_MAX_TOKENS = 8192;
+const DEEPSEEK_WEB_DEFAULT_COST = {
+  input: 0,
+  output: 0,
+  cacheRead: 0,
+  cacheWrite: 0,
+};
+
 const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
 const NVIDIA_DEFAULT_MODEL_ID = "nvidia/llama-3.1-nemotron-70b-instruct";
 const NVIDIA_DEFAULT_CONTEXT_WINDOW = 131072;
@@ -625,6 +636,71 @@ export function buildQianfanProvider(): ProviderConfig {
   };
 }
 
+export async function discoverDeepseekWebModels(params?: {
+  apiKey?: string;
+}): Promise<ModelDefinitionConfig[]> {
+  if (params?.apiKey) {
+    try {
+      const auth = JSON.parse(params.apiKey);
+      const { DeepSeekWebClient } = await import("../providers/deepseek-web-client.js");
+      const client = new DeepSeekWebClient(auth);
+      return (await client.discoverModels()) as ModelDefinitionConfig[];
+    } catch (e) {
+      console.warn("[DeepSeekWeb] Dynamic discovery failed, falling back to built-in list:", e);
+    }
+  }
+
+  return [
+    {
+      id: "deepseek-chat",
+      name: "DeepSeek V3 (Web)",
+      reasoning: false,
+      input: ["text"],
+      cost: DEEPSEEK_WEB_DEFAULT_COST,
+      contextWindow: DEEPSEEK_WEB_DEFAULT_CONTEXT_WINDOW,
+      maxTokens: DEEPSEEK_WEB_DEFAULT_MAX_TOKENS,
+    },
+    {
+      id: "deepseek-reasoner",
+      name: "DeepSeek R1 (Web)",
+      reasoning: true,
+      input: ["text"],
+      cost: DEEPSEEK_WEB_DEFAULT_COST,
+      contextWindow: DEEPSEEK_WEB_DEFAULT_CONTEXT_WINDOW,
+      maxTokens: DEEPSEEK_WEB_DEFAULT_MAX_TOKENS,
+    },
+    {
+      id: "deepseek-chat-search",
+      name: "DeepSeek V3 (Web + Search)",
+      reasoning: false,
+      input: ["text"],
+      cost: DEEPSEEK_WEB_DEFAULT_COST,
+      contextWindow: DEEPSEEK_WEB_DEFAULT_CONTEXT_WINDOW,
+      maxTokens: DEEPSEEK_WEB_DEFAULT_MAX_TOKENS,
+    },
+    {
+      id: "deepseek-reasoner-search",
+      name: "DeepSeek R1 (Web + Search)",
+      reasoning: true,
+      input: ["text"],
+      cost: DEEPSEEK_WEB_DEFAULT_COST,
+      contextWindow: DEEPSEEK_WEB_DEFAULT_CONTEXT_WINDOW,
+      maxTokens: DEEPSEEK_WEB_DEFAULT_MAX_TOKENS,
+    },
+  ];
+}
+
+export async function buildDeepseekWebProvider(params?: {
+  apiKey?: string;
+}): Promise<ProviderConfig> {
+  const models = await discoverDeepseekWebModels(params);
+  return {
+    baseUrl: DEEPSEEK_WEB_BASE_URL,
+    api: "deepseek-web",
+    models,
+  };
+}
+
 export function buildNvidiaProvider(): ProviderConfig {
   return {
     baseUrl: NVIDIA_BASE_URL,
@@ -855,6 +931,14 @@ export async function resolveImplicitProviders(params: {
       }),
     };
   }
+  const deepseekWebKey =
+    resolveEnvApiKeyVarName("deepseek-web") ??
+    resolveApiKeyFromProfiles({ provider: "deepseek-web", store: authStore });
+
+  providers["deepseek-web"] = {
+    ...(await buildDeepseekWebProvider({ apiKey: deepseekWebKey })),
+    apiKey: deepseekWebKey,
+  };
 
   return providers;
 }

@@ -211,3 +211,6 @@ export function buildSiliconFlowModelDefinition(params: {
     maxTokens: params.maxTokens ?? SILICONFLOW_DEFAULT_MAX_TOKENS,
   };
 }
+
+export const DEEPSEEK_WEB_DEFAULT_MODEL_ID = "deepseek-chat";
+export const DEEPSEEK_WEB_DEFAULT_MODEL_REF = `deepseek-web/${DEEPSEEK_WEB_DEFAULT_MODEL_ID}`;

@@ -172,6 +172,12 @@ const AUTH_CHOICE_GROUP_DEFS: {
     hint: "DeepSeek, Qwen, Llama (API key)",
     choices: ["siliconflow-cn-api-key"],
   },
+  {
+    value: "deepseek-web",
+    label: "DeepSeek Browser",
+    hint: "Uses cookies (V3/R1 thinking)",
+    choices: ["deepseek-web"],
+  },
 ];
 
 const BASE_AUTH_CHOICE_OPTIONS: ReadonlyArray<AuthChoiceOption> = [
@@ -317,6 +323,11 @@ const BASE_AUTH_CHOICE_OPTIONS: ReadonlyArray<AuthChoiceOption> = [
     value: "siliconflow-cn-api-key",
     label: "SiliconFlow (China)",
     hint: "deepseek-ai/DeepSeek-V3",
+  },
+  {
+    value: "deepseek-web",
+    label: "DeepSeek Browser (Cookie auth)",
+    hint: "Access DeepSeek V3/R1 via logged-in session",
   },
   { value: "custom-api-key", label: "Custom Provider" },
 ];

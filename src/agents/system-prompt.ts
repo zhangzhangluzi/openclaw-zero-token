@@ -332,11 +332,11 @@ export function buildAgentSystemPrompt(params: {
         "ALL internal reasoning MUST be inside <think>...</think>.",
         "Do not output any analysis outside <think>.",
         "Format every reply as <think>...</think> then <final>...</final>, with no other text.",
-        "Only the final user-visible reply may appear inside <final>.",
-        "Only text inside <final> is shown to the user; everything else is discarded and never seen by the user.",
+        "All user-visible content AND any <tool_call> tags MUST appear inside <final>.",
+        "Content inside <final> is the only part shown to the user or used for tool execution.",
         "Example:",
-        "<think>Short internal reasoning.</think>",
-        "<final>Hey there! What would you like to do next?</final>",
+        "<think>Identify tool and params.</think>",
+        '<final><tool_call name="read">{"path": "foo.md"}</tool_call></final>',
       ].join(" ")
     : undefined;
   const reasoningLevel = params.reasoningLevel ?? "off";

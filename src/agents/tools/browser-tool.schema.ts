@@ -31,6 +31,11 @@ const BROWSER_TOOL_ACTIONS = [
   "pdf",
   "upload",
   "dialog",
+  "click",
+  "type",
+  "hover",
+  "fill",
+  "press",
   "act",
 ] as const;
 
@@ -86,6 +91,7 @@ export const BrowserToolSchema = Type.Object({
   node: Type.Optional(Type.String()),
   profile: Type.Optional(Type.String()),
   targetUrl: Type.Optional(Type.String()),
+  url: Type.Optional(Type.String()),
   targetId: Type.Optional(Type.String()),
   limit: Type.Optional(Type.Number()),
   maxChars: Type.Optional(Type.Number()),

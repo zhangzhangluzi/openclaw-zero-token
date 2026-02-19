@@ -338,4 +338,21 @@ export function applyExtraParamsToAgent(
   // Force `store=true` for direct OpenAI/OpenAI Codex providers so multi-turn
   // server-side conversation state is preserved.
   agent.streamFn = createOpenAIResponsesStoreWrapper(agent.streamFn);
+
+  // Auto-detect searchEnabled for DeepSeek Web models based on ID suffix if not explicitly set.
+  if (
+    provider === "deepseek-web" &&
+    modelId.includes("-search") &&
+    merged.searchEnabled === undefined
+  ) {
+    log.debug(`auto-enabling search for ${provider}/${modelId}`);
+    const nextWrapped = createStreamFnWithExtraParams(
+      agent.streamFn,
+      { searchEnabled: true },
+      provider,
+    );
+    if (nextWrapped) {
+      agent.streamFn = nextWrapped;
+    }
+  }
 }

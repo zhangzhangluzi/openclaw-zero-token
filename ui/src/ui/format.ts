@@ -56,5 +56,5 @@ export function parseList(input: string): string[] {
 }
 
 export function stripThinkingTags(value: string): string {
-  return stripReasoningTagsFromText(value, { mode: "preserve", trim: "start" });
+  return stripReasoningTagsFromText(value, { mode: "strict", trim: "start" });
 }

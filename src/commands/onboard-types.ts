@@ -48,6 +48,7 @@ export type AuthChoice =
   | "qianfan-api-key"
   | "siliconflow-global-api-key"
   | "siliconflow-cn-api-key"
+  | "deepseek-web"
   | "custom-api-key"
   | "skip";
 export type AuthChoiceGroupId =
@@ -76,6 +77,7 @@ export type AuthChoiceGroupId =
   | "xai"
   | "siliconflow-global"
   | "siliconflow-cn"
+  | "deepseek-web"
   | "custom";
 export type GatewayAuthChoice = "token" | "password";
 export type ResetScope = "config" | "config+creds+sessions" | "full";
@@ -127,6 +129,7 @@ export type OnboardOptions = {
   qianfanApiKey?: string;
   siliconflowGlobalApiKey?: string;
   siliconflowCnApiKey?: string;
+  deepseekWebCookie?: string;
   customBaseUrl?: string;
   customApiKey?: string;
   customModelId?: string;

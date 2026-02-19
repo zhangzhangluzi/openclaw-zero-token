@@ -4,8 +4,10 @@ import {
   HUGGINGFACE_MODEL_CATALOG,
 } from "../agents/huggingface-models.js";
 import {
+  buildDeepseekWebProvider,
   buildQianfanProvider,
   buildXiaomiProvider,
+  DEEPSEEK_WEB_DEFAULT_MODEL_ID,
   QIANFAN_DEFAULT_MODEL_ID,
   XIAOMI_DEFAULT_MODEL_ID,
 } from "../agents/models-config.providers.js";
@@ -35,6 +37,7 @@ import {
   XIAOMI_DEFAULT_MODEL_REF,
   ZAI_DEFAULT_MODEL_REF,
   XAI_DEFAULT_MODEL_REF,
+  DEEPSEEK_WEB_DEFAULT_MODEL_REF,
 } from "./onboard-auth.credentials.js";
 export {
   applyCloudflareAiGatewayConfig,
@@ -541,4 +544,26 @@ export function applySiliconFlowGlobalConfig(cfg: OpenClawConfig): OpenClawConfi
 export function applySiliconFlowCnConfig(cfg: OpenClawConfig): OpenClawConfig {
   const next = applySiliconFlowCnProviderConfig(cfg);
   return applyAgentDefaultModelPrimary(next, SILICONFLOW_CN_DEFAULT_MODEL_REF);
+}
+
+export async function applyDeepseekWebProviderConfig(cfg: OpenClawConfig): Promise<OpenClawConfig> {
+  const models = { ...cfg.agents?.defaults?.models };
+  models[DEEPSEEK_WEB_DEFAULT_MODEL_REF] = {
+    ...models[DEEPSEEK_WEB_DEFAULT_MODEL_REF],
+    alias: models[DEEPSEEK_WEB_DEFAULT_MODEL_REF]?.alias ?? "DeepSeek Browser",
+  };
+  const defaultProvider = await buildDeepseekWebProvider();
+  return applyProviderConfigWithDefaultModels(cfg, {
+    agentModels: models,
+    providerId: "deepseek-web",
+    api: "deepseek-web",
+    baseUrl: defaultProvider.baseUrl,
+    defaultModels: defaultProvider.models ?? [],
+    defaultModelId: DEEPSEEK_WEB_DEFAULT_MODEL_ID,
+  });
+}
+
+export async function applyDeepseekWebConfig(cfg: OpenClawConfig): Promise<OpenClawConfig> {
+  const next = await applyDeepseekWebProviderConfig(cfg);
+  return applyAgentDefaultModelPrimary(next, DEEPSEEK_WEB_DEFAULT_MODEL_REF);
 }
