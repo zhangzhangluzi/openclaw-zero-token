@@ -392,6 +392,92 @@ curl http://127.0.0.1:3001/v1/chat/completions \
   }'
 ```
 
+### 部署为“在线 API 中转服务”（类似 cli-proxy-api）
+
+如果你的目标是把本项目当成 **OpenAI 兼容 API 网关**（给你自己的应用/脚本转发请求），而不是本地助手 UI，可按下面配置：
+
+1. 将网关监听改成外网可访问（`bind: "lan"`）
+2. 开启强认证（建议 `gateway.auth.mode: "token"`）
+3. 关闭控制台 UI（`gateway.controlUi.enabled: false`）
+4. 用 Nginx/Caddy/Traefik 反向代理 + HTTPS 暴露域名
+
+示例 `openclaw.json`：
+
+```json
+{
+  "gateway": {
+    "mode": "local",
+    "port": 3001,
+    "bind": "lan",
+    "controlUi": {
+      "enabled": false
+    },
+    "auth": {
+      "mode": "token",
+      "token": "replace-with-a-long-random-token"
+    },
+    "trustedProxies": ["127.0.0.1", "::1"]
+  }
+}
+```
+
+启动：
+
+```bash
+node openclaw.mjs gateway
+```
+
+远程调用（你的业务服务 -> OpenClaw 网关）：
+
+```bash
+curl https://your-domain.example.com/v1/chat/completions \
+  -H "Authorization: Bearer replace-with-a-long-random-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-web/deepseek-chat",
+    "messages": [{"role": "user", "content": "请返回 pong"}],
+    "stream": false
+  }'
+```
+
+> 建议：生产环境不要直接把 3001 端口裸露到公网，统一放在反向代理后面做 TLS、限流、IP 过滤和审计。
+
+#### Railway 最小化部署（最快可用）
+
+> 适用场景：你已经在本地完成过一次 `onboard` 并拿到了可用认证（如 deepseek-web / doubao-proxy），现在只想把 Gateway 作为在线中转接口跑起来。
+
+1. 新建 Railway Project，连接本仓库
+2. Railway Variables 设置最小必需项：
+
+```bash
+OPENCLAW_PROFILE=prod
+OPENCLAW_GATEWAY_TOKEN=<一段长随机串>
+```
+
+3. Start Command 使用（让 Railway 分配端口）：
+
+```bash
+node openclaw.mjs gateway --allow-unconfigured --bind lan --port $PORT --auth token --token $OPENCLAW_GATEWAY_TOKEN
+```
+
+4. 部署后在 Railway 的 Public Domain 上验证：
+
+```bash
+curl https://<your-railway-domain>/v1/chat/completions \
+  -H "Authorization: Bearer <OPENCLAW_GATEWAY_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-web/deepseek-chat",
+    "messages": [{"role": "user", "content": "ping"}],
+    "stream": false
+  }'
+```
+
+最小化建议（Railway 版本）：
+- 先只做 **token 鉴权 + HTTPS 域名**，服务跑通后再补限流和审计。
+- 若你走 `doubao-proxy`，把 `baseUrl` 配到可访问的 doubao-free-api 地址（内网服务可用 Railway Private Networking 或公网地址）。
+- 认证凭证（Cookie/session）过期后，需要重新执行对应平台的认证流程并更新状态目录。
+
 ### CLI 模式
 
 ```bash
