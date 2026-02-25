@@ -452,15 +452,17 @@ curl https://your-domain.example.com/v1/chat/completions \
 ```bash
 OPENCLAW_PROFILE=prod
 OPENCLAW_GATEWAY_TOKEN=<一段长随机串>
+OPENCLAW_STATE_DIR=/data/openclaw-state
 ```
 
-3. Start Command 使用（让 Railway 分配端口）：
+3. 挂载 Volume（如挂载到 `/data`），用于持久化会话
+4. Start Command 使用（让 Railway 分配端口）：
 
 ```bash
 node openclaw.mjs gateway --allow-unconfigured --bind lan --port $PORT --auth token --token $OPENCLAW_GATEWAY_TOKEN
 ```
 
-4. 部署后在 Railway 的 Public Domain 上验证：
+5. 部署后在 Railway 的 Public Domain 上验证：
 
 ```bash
 curl https://<your-railway-domain>/v1/chat/completions \
@@ -497,7 +499,7 @@ curl https://<your-railway-domain>/v1/chat/completions \
    - 产出的最新凭据再同步到 Railway 运行环境
 
 排障清单（Railway）：
-- 每次重启后都失效：通常是状态目录没持久化（需 Volume + `OPENCLAW_STATE_DIR`）。
+- 每次重启后都失效：通常是状态目录没持久化（确认 Volume 挂载正常，且 `OPENCLAW_STATE_DIR` 指向该挂载路径）。
 - 401/会话失效：上游 Web 会话过期，需要重新在“可浏览器登录环境”刷新一次。
 - 启动即要求 onboarding：确认你没有在启动命令里触发登录流程，生产只跑 `gateway`。
 
