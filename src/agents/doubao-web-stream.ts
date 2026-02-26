@@ -88,7 +88,7 @@ export function createDoubaoWebStreamFn(authOrJson: string): StreamFn {
           try {
             const data = JSON.parse(dataStr) as any;
 
-            // doubao-free-api / samantha 格式
+            // 豆包 samantha API 格式
             if (data.event_type === 2001 && data.event_data) {
               const eventData = JSON.parse(data.event_data) as any;
               if (eventData.message?.content) {
