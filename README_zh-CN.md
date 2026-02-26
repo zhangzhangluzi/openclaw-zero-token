@@ -392,9 +392,6 @@ curl http://127.0.0.1:3001/v1/chat/completions \
   }'
 ```
 
-如需“在线 API 中转服务（含 Railway 最小化部署、无浏览器登录处理）”，见：
-- `docs/deployment/railway-proxy.zh-CN.md`
-
 ### CLI 模式
 
 ```bash
