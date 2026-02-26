@@ -236,11 +236,26 @@ If SSE stream is returned, the proxy is working.
 
 ## Quick Start
 
+> **Platform Support:**
+> - 🍎 **macOS**: 
+>   - 🚀 [Quick Start Guide](QUICK_START_MAC.md) - 5-step setup
+>   - 📖 [Detailed Setup Guide](SETUP_GUIDE_zh-CN.md) - Complete instructions (Cross-platform)
+>   - 🔍 [Chrome Debug Mode Explained](CHROME_DEBUG_MODE_EN.md) - Why can't I see my bookmarks?
+>   - ✅ Environment check: `./check-mac-setup.sh` or `./check-setup.sh`
+> - 🐧 **Linux**: Follow the same process as macOS (use `/home/` instead of `/Users/` for paths)
+>   - ✅ Environment check: `./check-setup.sh`
+> - 🪟 **Windows**: Recommended to use WSL2 (Windows Subsystem for Linux), then follow Linux process
+>   - WSL2 installation: `wsl --install` (one command, one reboot)
+>   - WSL2 guide: https://docs.microsoft.com/en-us/windows/wsl/install
+>   - ✅ Environment check: `./check-setup.sh`
+> - 📖 [Platform Support Details](PLATFORM_SUPPORT.md)
+
 ### Requirements
 
 - Node.js >= 22.12.0
 - pnpm >= 9.0.0
 - Chrome Browser
+- **OS**: macOS, Linux, or Windows (WSL2)
 
 ### Script Overview
 
@@ -253,27 +268,18 @@ This project provides several helper scripts for different use cases:
 │                                                                      │
 │  First Time Setup:                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐  │
-│  │ run.sh (One-click setup: build + configure + start)          │  │
-│  │    │                                                          │  │
-│  │    ├─→ pnpm build              # Compile project             │  │
-│  │    │                                                          │  │
-│  │    ├─→ onboard.sh               # Configuration wizard       │  │
-│  │    │       └─→ Select AI provider (DeepSeek/Doubao/Claude)  │  │
-│  │    │           Configure authentication                      │  │
-│  │    │           Save to .openclaw-state/openclaw.json         │  │
-│  │    │                                                          │  │
-│  │    └─→ server.sh start          # Start Gateway (port 3001)  │  │
+│  │ 1. pnpm install && pnpm build    # Install & compile         │  │
+│  │ 2. start-chrome-debug.sh         # Start Chrome debug mode   │  │
+│  │ 3. onboard.sh                    # Configuration wizard      │  │
+│  │ 4. server.sh start               # Start Gateway             │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                                                      │
-│  Testing Claude Web:                                                │
+│  Claude Web Usage:                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐  │
-│  │ test-all.sh (Test Claude Web functionality)                  │  │
-│  │    │                                                          │  │
-│  │    ├─→ start-chrome-debug.sh   # Start Chrome debug mode    │  │
-│  │    ├─→ test-chrome-connection.sh # Verify connection        │  │
-│  │    ├─→ server.sh stop           # Stop Gateway              │  │
-│  │    ├─→ Start Gateway            # Restart Gateway           │  │
-│  │    └─→ test-claude.sh           # Test Claude API           │  │
+│  │ 1. start-chrome-debug.sh   # Start Chrome debug mode        │  │
+│  │ 2. onboard.sh              # Configure Claude Web auth      │  │
+│  │ 3. server.sh start         # Start Gateway                  │  │
+│  │ 4. test-claude.sh "test"   # Test Claude API                │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                                                      │
 │  Daily Usage:                                                       │
@@ -289,10 +295,12 @@ This project provides several helper scripts for different use cases:
 
 | Script | Purpose | When to Use | Requires Build |
 |--------|---------|-------------|----------------|
-| `run.sh` | Build + Configure + Start | First time setup | ✅ Auto-builds |
+| `check-mac-setup.sh` | Environment check | Before first run | ❌ No build needed |
+| `start-chrome-debug.sh` | Start Chrome debug | For Claude Web | ❌ No build needed |
 | `onboard.sh` | Configuration wizard | Initial config or reconfigure | ❌ Build first |
-| `test-all.sh` | Test Claude Web | Verify Claude functionality | ❌ Build & configure first |
 | `server.sh` | Manage Gateway service | Daily start/stop/restart | ❌ Build & configure first |
+| `test-claude.sh` | Test Claude API | Verify functionality | ❌ Configure first |
+| `test-chrome-connection.sh` | Test Chrome connection | Troubleshooting | ❌ No build needed |
 
 ### Installation
 
@@ -305,19 +313,7 @@ cd openclaw-zero-token
 pnpm install
 ```
 
-### Option 1: One-Click Setup (Recommended for First Time)
-
-```bash
-# This will: build + configure + start
-./run.sh
-```
-
-The script will:
-1. Compile the project (`pnpm build`)
-2. Run configuration wizard (`onboard.sh`)
-3. Start Gateway service (`server.sh start`)
-
-### Option 2: Step-by-Step Setup
+### Installation Steps
 
 #### Step 1: Build
 
@@ -388,22 +384,29 @@ node openclaw.mjs tui
 
 ## Claude Web Usage
 
-> **Note:** Before testing Claude Web, make sure you have completed the initial setup using `run.sh` or `onboard.sh` to configure Claude Web authentication. See [Script Overview](#script-overview) for the relationship between different scripts.
+> **Note:** Before testing Claude Web, make sure you have completed the initial setup using `onboard.sh` to configure Claude Web authentication. See [Script Overview](#script-overview) for the relationship between different scripts.
 
-### Quick Start (One-Click Test)
+### Quick Start (Manual Setup)
 
 ```bash
-# One-click test script (recommended)
-./test-all.sh
+# Step 1: Start Chrome in debug mode
+./start-chrome-debug.sh
 
-# Features:
-# - Automatically starts Chrome in debug mode
-# - Opens Claude.ai and waits for login
-# - Tests connection and API
-# - Opens Web UI automatically
+# Step 2: Wait for Chrome to open and login to Claude
+
+# Step 3: Configure (in another terminal)
+./onboard.sh
+# Select: Claude Web -> Automated Login
+
+# Step 4: Start Gateway
+./server.sh start
+
+# Step 5: Test
+./test-claude.sh "Hello, Claude!"
+
+# Or open Web UI
+open http://127.0.0.1:3001
 ```
-
-**What test-all.sh does:** See the [Script Flow](#testing-scripts) in the Testing Scripts section below.
 
 ### Manual Setup
 
@@ -547,38 +550,56 @@ curl http://127.0.0.1:3001/v1/chat/completions \
 ### Testing Scripts
 
 ```bash
-# One-click test (recommended)
-./test-all.sh
-
 # Test Chrome connection
 ./test-chrome-connection.sh
 
 # Test Claude API with custom message
 ./test-claude.sh "Your question here"
-
-# Test with random message (avoid detection)
-./test-claude.sh "$(shuf -n 1 test-messages.txt)"
 ```
-
-**test-all.sh Script Flow:**
-
-```
-test-all.sh
-    │
-    ├─→ start-chrome-debug.sh      # Start Chrome in debug mode (port 9222)
-    │
-    ├─→ test-chrome-connection.sh  # Verify Chrome debug connection
-    │
-    ├─→ server.sh stop              # Stop existing Gateway
-    │
-    ├─→ Start Gateway               # Launch Gateway service
-    │
-    └─→ test-claude.sh              # Test Claude API with message
-```
-
-The `test-all.sh` script automates the entire testing process, making it easy to verify your Claude Web setup with a single command.
 
 ### Troubleshooting
+
+**First Time Setup: Use Configuration Wizard**
+
+```bash
+./onboard.sh
+```
+
+**The configuration wizard will automatically create all required files and directories!**
+
+---
+
+**Fix Issues: Use Diagnostic Command**
+
+**If the project has been run before but you encounter issues, run the diagnostic command:**
+
+```bash
+node dist/index.mjs doctor
+```
+
+**The diagnostic command will automatically:**
+- ✅ Check all required directories
+- ✅ Create missing directories
+- ✅ Fix file permission issues
+- ✅ Check config file integrity
+- ✅ Detect multiple state directory conflicts
+- ✅ Provide detailed repair suggestions
+
+**⚠️ Important Limitations:**
+- ❌ `doctor` command will **NOT** create config files (`openclaw.json`)
+- ❌ `doctor` command will **NOT** create auth files (`auth-profiles.json`)
+- ✅ If config files are missing or corrupted, re-run `./onboard.sh`
+
+**When to use:**
+- Directories accidentally deleted
+- "Permission denied" errors
+- Verify environment is normal
+- Session history lost
+- **NOT for first-time setup** (use `onboard.sh` instead)
+
+**For detailed instructions:** See [Setup Guide - Troubleshooting](SETUP_GUIDE_zh-CN.md#common-issues)
+
+---
 
 **Chrome connection failed:**
 ```bash

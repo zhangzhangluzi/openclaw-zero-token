@@ -70,9 +70,10 @@
 
 #### 1. 初始化阶段
 ```
-用户运行 ./test-all.sh
+用户运行首次配置流程
     ↓
 启动 Chrome 调试模式 (端口 9222)
+    ./start-chrome-debug.sh
     ↓
 自动打开 Claude.ai 并登录
     ↓
@@ -253,9 +254,7 @@ openclaw-zero-token/
 ├── start-chrome-debug.sh                   # Chrome 启动脚本 ⭐
 ├── test-chrome-connection.sh               # 连接测试
 ├── test-claude.sh                          # API 测试
-├── test-all.sh                             # 一键测试 ⭐
-├── test-messages.txt                       # 测试消息库
-└── server.sh                               # Gateway 管理
+├── server.sh                               # Gateway 管理
 
 ⭐ = 核心修改文件
 ```
@@ -344,36 +343,21 @@ const processLine = (line: string) => {
 #### 方法 1：一键测试（推荐）
 
 ```bash
-# 自动完成所有步骤
-./test-all.sh
+# 手动测试流程
+# 1. 启动 Chrome 调试模式
+./start-chrome-debug.sh
 
-# 功能：
-# 1. 重启 Chrome 调试模式
-# 2. 自动打开 Claude.ai
-# 3. 测试 Chrome 连接
-# 4. 重启 Gateway
-# 5. 随机选择测试消息
-# 6. 测试 API 并显示结果
-# 7. 自动打开 Web UI
+# 2. 配置 Claude Web（在另一个终端）
+./onboard.sh
+
+# 3. 启动 Gateway
+./server.sh start
+
+# 4. 测试 API
+./test-claude.sh "你好，Claude！"
 ```
 
-**test-all.sh 脚本调用流程：**
-
-```
-test-all.sh
-    │
-    ├─→ start-chrome-debug.sh      # 启动 Chrome 调试模式（端口 9222）
-    │
-    ├─→ test-chrome-connection.sh  # 验证 Chrome 调试连接
-    │
-    ├─→ server.sh stop              # 停止现有 Gateway
-    │
-    ├─→ 启动 Gateway                # 启动 Gateway 服务
-    │
-    └─→ test-claude.sh              # 测试 Claude API
-```
-
-#### 方法 2：手动测试
+#### 方法 2：分步测试
 
 ```bash
 # 1. 启动 Chrome 调试模式
@@ -452,7 +436,7 @@ pkill -f "chrome.*9222"
 
 **原因：** Gateway 未完全启动
 
-**解决：** 增加等待时间（已在 `test-all.sh` 中设置为 5 秒）
+**解决：** 增加等待时间（建议等待 5 秒后再测试）
 
 
 ### 🎯 性能优化
@@ -537,9 +521,10 @@ This project implements free access to Claude AI using browser cookie authentica
 
 #### 1. Initialization Phase
 ```
-User runs ./test-all.sh
+User runs first-time setup
     ↓
 Start Chrome in debug mode (port 9222)
+    ./start-chrome-debug.sh
     ↓
 Auto-open Claude.ai and login
     ↓
@@ -703,36 +688,21 @@ const processLine = (line: string) => {
 #### Method 1: One-Click Test (Recommended)
 
 ```bash
-# Automatically complete all steps
-./test-all.sh
+# Manual testing process
+# 1. Start Chrome debug mode
+./start-chrome-debug.sh
 
-# Features:
-# 1. Restart Chrome debug mode
-# 2. Auto-open Claude.ai
-# 3. Test Chrome connection
-# 4. Restart Gateway
-# 5. Randomly select test message
-# 6. Test API and show results
-# 7. Auto-open Web UI
+# 2. Configure Claude Web (in another terminal)
+./onboard.sh
+
+# 3. Start Gateway
+./server.sh start
+
+# 4. Test API
+./test-claude.sh "Hello, Claude!"
 ```
 
-**test-all.sh Script Flow:**
-
-```
-test-all.sh
-    │
-    ├─→ start-chrome-debug.sh      # Start Chrome in debug mode (port 9222)
-    │
-    ├─→ test-chrome-connection.sh  # Verify Chrome debug connection
-    │
-    ├─→ server.sh stop              # Stop existing Gateway
-    │
-    ├─→ Start Gateway               # Launch Gateway service
-    │
-    └─→ test-claude.sh              # Test Claude API with message
-```
-
-#### Method 2: Manual Testing
+#### Method 2: Step-by-step Testing
 
 ```bash
 # 1. Start Chrome debug mode
