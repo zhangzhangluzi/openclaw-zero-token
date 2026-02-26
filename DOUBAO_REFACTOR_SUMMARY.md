@@ -2,7 +2,7 @@
 
 ## 重构目标
 
-按照 Claude 的模式重构豆包代码，移除 doubao-proxy 代理方案，只保留浏览器上下文方案。
+按照 Claude 的模式重构豆包代码，采用浏览器上下文方案，实现与 Claude 一致的架构。
 
 ## 核心改进
 
@@ -93,15 +93,15 @@ interface DoubaoAuth {
 1. `src/providers/doubao-web-auth.ts` - 简化认证流程
 2. `src/agents/doubao-web-stream.ts` - 使用新的浏览器客户端
 3. `src/commands/auth-choice.apply.doubao-web.ts` - 简化配置流程
-4. `src/commands/auth-choice.apply.ts` - 移除 doubao-proxy 引用
-5. `src/commands/auth-choice-options.ts` - 移除 doubao-proxy 选项
-6. `src/commands/onboard-types.ts` - 移除 doubao-proxy 类型
-7. `src/agents/model-auth.ts` - 移除 doubao-proxy 环境变量
-8. `src/commands/onboard-auth.config-core.ts` - 移除 doubao-proxy 配置函数
-9. `src/agents/models-config.providers.ts` - 移除 doubao-proxy 提供者
+4. `src/commands/auth-choice.apply.ts` - 更新认证选项
+5. `src/commands/auth-choice-options.ts` - 更新认证选项
+6. `src/commands/onboard-types.ts` - 更新类型定义
+7. `src/agents/model-auth.ts` - 更新环境变量处理
+8. `src/commands/onboard-auth.config-core.ts` - 更新配置函数
+9. `src/agents/models-config.providers.ts` - 更新提供者配置
 
 ### 删除文件
-1. `src/commands/auth-choice.apply.doubao-proxy.ts` - doubao-proxy 认证配置
+无需删除文件，所有功能都整合到浏览器方案中。
 
 ## 技术对比
 

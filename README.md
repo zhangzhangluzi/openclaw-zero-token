@@ -228,8 +228,8 @@ pkill -f "chrome.*9222"
 ### Technical Details
 
 For detailed technical documentation, see [DOUBAO_REFACTOR_SUMMARY.md](DOUBAO_REFACTOR_SUMMARY.md):
-- Browser-based implementation
-- Comparison with previous proxy approach
+- Browser-based implementation following Claude's architecture
+- Simplified authentication (only sessionid + ttwid)
 - Code structure and modifications
 
 ---
