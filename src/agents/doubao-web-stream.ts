@@ -2,36 +2,30 @@ import type { StreamFn } from "@mariozechner/pi-agent-core";
 import {
   createAssistantMessageEventStream,
   type AssistantMessage,
-  type AssistantMessageEvent,
   type TextContent,
 } from "@mariozechner/pi-ai";
-import { DoubaoWebClient, type DoubaoMessage } from "../providers/doubao-web-client.js";
+import { DoubaoWebClientBrowser, type DoubaoWebClientOptions } from "../providers/doubao-web-client-browser.js";
 
-export function createDoubaoWebStreamFn(auth: string): StreamFn {
-  let options: any;
+export function createDoubaoWebStreamFn(authOrJson: string): StreamFn {
+  let options: DoubaoWebClientOptions;
   try {
-    const parsed = JSON.parse(auth);
-    options = typeof parsed === "string" ? { sessionid: parsed } : parsed;
+    options = JSON.parse(authOrJson) as DoubaoWebClientOptions;
   } catch {
-    options = { sessionid: auth };
+    options = { sessionid: authOrJson, userAgent: "Mozilla/5.0" };
   }
-  
-  console.log(`[DoubaoWebStream] Auth options keys: ${Object.keys(options).join(', ')}`);
-  console.log(`[DoubaoWebStream] Has fp: ${!!options.fp}, fp value: ${options.fp}`);
-  console.log(`[DoubaoWebStream] Has tea_uuid: ${!!options.tea_uuid}, tea_uuid value: ${options.tea_uuid}`);
-  console.log(`[DoubaoWebStream] Has device_id: ${!!options.device_id}, device_id value: ${options.device_id}`);
-  console.log(`[DoubaoWebStream] Has web_tab_id: ${!!options.web_tab_id}, web_tab_id value: ${options.web_tab_id}`);
-  
-  const client = new DoubaoWebClient(options);
+
+  const client = new DoubaoWebClientBrowser(options);
 
   return (model, context, streamOptions) => {
     const stream = createAssistantMessageEventStream();
 
     const run = async () => {
       try {
+        await client.init();
+
         const messages = context.messages || [];
-        const doubaoMessages: DoubaoMessage[] = messages.map((m) => ({
-          role: m.role as "user" | "assistant" | "system",
+        const doubaoMessages = messages.map((m) => ({
+          role: m.role as string,
           content:
             typeof m.content === "string"
               ? m.content
@@ -49,20 +43,16 @@ export function createDoubaoWebStreamFn(auth: string): StreamFn {
         console.log(`[DoubaoWebStream] Messages count: ${doubaoMessages.length}`);
 
         const responseStream = await client.chatCompletions({
-          model: modelId,
           messages: doubaoMessages,
-          stream: true,
+          model: modelId,
+          signal: streamOptions?.signal,
         });
 
-        if (
-          !responseStream ||
-          !(Symbol.asyncIterator in Object(responseStream))
-        ) {
-          throw new Error("Doubao Web API returned empty response");
-        }
-
-        const contentParts: TextContent[] = [];
+        const reader = responseStream.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
         let accumulatedContent = "";
+        const contentParts: TextContent[] = [];
         let contentIndex = 0;
         let textStarted = false;
 
@@ -84,23 +74,76 @@ export function createDoubaoWebStreamFn(auth: string): StreamFn {
           timestamp: Date.now(),
         });
 
-        for await (const chunk of responseStream as AsyncIterable<string>) {
-          if (!chunk) continue;
+        const processLine = (line: string) => {
+          // 豆包 SSE 格式解析
+          // 格式1: data: {"event_type":2001,"event_data":"{...}"}
+          // 格式2: id: 123 event: CHUNK_DELTA data: {"text":"..."}
+          
+          if (!line) return;
 
-          if (!textStarted) {
-            textStarted = true;
-            contentParts[contentIndex] = { type: "text", text: "" };
-            stream.push({ type: "text_start", contentIndex, partial: createPartial() });
+          // 处理 data: 前缀
+          const dataStr = line.startsWith("data: ") ? line.slice(6).trim() : line.trim();
+          if (!dataStr || dataStr === "[DONE]") return;
+
+          try {
+            const data = JSON.parse(dataStr) as any;
+
+            // 豆包 samantha API 格式
+            if (data.event_type === 2001 && data.event_data) {
+              const eventData = JSON.parse(data.event_data) as any;
+              if (eventData.message?.content) {
+                const content = JSON.parse(eventData.message.content) as any;
+                if (content.text) {
+                  const delta = content.text;
+
+                  if (!textStarted) {
+                    textStarted = true;
+                    contentParts[contentIndex] = { type: "text", text: "" };
+                    stream.push({
+                      type: "text_start",
+                      contentIndex,
+                      partial: createPartial(),
+                    });
+                  }
+
+                  contentParts[contentIndex].text += delta;
+                  accumulatedContent += delta;
+
+                  stream.push({
+                    type: "text_delta",
+                    contentIndex,
+                    delta,
+                    partial: createPartial(),
+                  });
+                }
+              }
+            }
+            // 结束标记
+            else if (data.event_type === 2003) {
+              // 流结束
+            }
+          } catch (e) {
+            // 忽略解析错误
+          }
+        };
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            if (buffer.trim()) {
+              processLine(buffer.trim());
+            }
+            break;
           }
 
-          contentParts[contentIndex].text += chunk;
-          accumulatedContent += chunk;
-          stream.push({
-            type: "text_delta",
-            contentIndex,
-            delta: chunk,
-            partial: createPartial(),
-          });
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            processLine(line.trim());
+          }
         }
 
         console.log(`[DoubaoWebStream] Stream completed. Content length: ${accumulatedContent.length}`);
@@ -152,7 +195,7 @@ export function createDoubaoWebStreamFn(auth: string): StreamFn {
             },
             timestamp: Date.now(),
           },
-        } as AssistantMessageEvent);
+        } as any);
       } finally {
         stream.end();
       }

@@ -6,7 +6,6 @@ import { applyAuthChoiceApiProviders } from "./auth-choice.apply.api-providers.j
 import { applyAuthChoiceClaudeWeb } from "./auth-choice.apply.claude-web.js";
 import { applyAuthChoiceCopilotProxy } from "./auth-choice.apply.copilot-proxy.js";
 import { applyAuthChoiceDeepseekWeb } from "./auth-choice.apply.deepseek-web.js";
-import { applyAuthChoiceDoubaoProxy } from "./auth-choice.apply.doubao-proxy.js";
 import { applyAuthChoiceDoubaoWeb } from "./auth-choice.apply.doubao-web.js";
 import { applyAuthChoiceGitHubCopilot } from "./auth-choice.apply.github-copilot.js";
 import { applyAuthChoiceGoogleAntigravity } from "./auth-choice.apply.google-antigravity.js";
@@ -62,7 +61,6 @@ export async function applyAuthChoice(
     applyAuthChoiceCopilotProxy,
     applyAuthChoiceQwenPortal,
     applyAuthChoiceDeepseekWeb,
-    applyAuthChoiceDoubaoProxy,
     applyAuthChoiceDoubaoWeb,
     applyAuthChoiceClaudeWeb,
     applyAuthChoiceXAI,

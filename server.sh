@@ -60,12 +60,26 @@ start_gateway() {
     WEBUI_URL="http://127.0.0.1:$PORT/#token=62b791625fa441be036acd3c206b7e14e2bb13c803355823"
     echo "Gateway 服务已启动 (PID: $GATEWAY_PID)"
     echo "Web UI: $WEBUI_URL"
-    if command -v open >/dev/null 2>&1; then
+    
+    # 跨平台打开浏览器
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      # macOS
       echo "正在打开浏览器..."
       open "$WEBUI_URL"
-    elif command -v xdg-open >/dev/null 2>&1; then
+    elif [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "linux"* ]]; then
+      # Linux
+      if command -v xdg-open >/dev/null 2>&1; then
+        echo "正在打开浏览器..."
+        xdg-open "$WEBUI_URL" 2>/dev/null
+      else
+        echo "提示：请手动打开浏览器访问 Web UI"
+      fi
+    elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]; then
+      # Windows (Git Bash / Cygwin)
       echo "正在打开浏览器..."
-      xdg-open "$WEBUI_URL"
+      start "$WEBUI_URL"
+    else
+      echo "提示：请手动打开浏览器访问 Web UI"
     fi
   else
     echo "Gateway 服务启动失败，请查看日志:"
