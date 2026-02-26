@@ -2,7 +2,7 @@
 
 > 目标：把 OpenClaw Zero Token 当作 OpenAI 兼容 API 网关使用，而不是本地助手 UI。
 
-## 1) 网关基础配置（对外服务）
+## 1) 推荐网关配置（对外服务）
 
 建议配置：
 - `gateway.bind = "lan"`
@@ -81,20 +81,19 @@ Railway 无 GUI 浏览器是常见限制，推荐以下方案：
 - **401/会话过期**：上游 Web 会话过期，需在可浏览器环境重新登录刷新。
 - **启动要求 onboarding**：生产启动命令不要触发登录流程，只运行 `gateway`。
 
-
-## 5) 常见构建报错：`cannot copy to non-directory: ... /app/**`
+## 5) 构建报错：`cannot copy to non-directory: ... /app/**`
 
 这个报错通常不是代码问题，而是 Railway 构建配置里把 **Dockerfile Path / Build Context** 误设成了带 `**` 的值。
 
 处理方式：
 
-1. 在 Railway 服务设置里，改用 **Nixpacks**（不要强制 Dockerfile 构建）
+1. 在 Railway 服务设置里改用 **Nixpacks**（不要强制 Dockerfile 构建）
 2. 清空 Dockerfile 相关自定义路径（尤其是 `**`、`./**` 这类通配）
 3. 保持仓库根目录作为构建上下文（`/`）
-4. 本仓库已提供 `railway.toml` 固定 builder 与 startCommand，推送后重新 Deploy
+4. 推送后重新 Deploy（本仓库已提供 `railway.toml`）
 
 如果你必须用 Dockerfile：
-- 请提供一个明确存在的 Dockerfile 路径（例如 `./Dockerfile`）
+- 请提供明确存在的 Dockerfile 路径（例如 `./Dockerfile`）
 - 不要在 Dockerfile 的 `COPY` 目标路径里写 `/app/**`
 
-
+> 注意：Railway 控制台里的构建配置通常优先于仓库默认配置。若你已在 UI 里设置 Dockerfile 路径，可能会覆盖 `railway.toml`。
