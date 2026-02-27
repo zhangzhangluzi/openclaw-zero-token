@@ -2,7 +2,7 @@
 
 > 目标：把 OpenClaw Zero Token 当作 OpenAI 兼容 API 网关使用，而不是本地助手 UI。
 
-## 1) 推荐网关配置（对外服务）
+## 1) 网关基础配置（对外服务）
 
 建议配置：
 - `gateway.bind = "lan"`
