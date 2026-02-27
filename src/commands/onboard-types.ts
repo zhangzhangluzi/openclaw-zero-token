@@ -50,7 +50,6 @@ export type AuthChoice =
   | "siliconflow-cn-api-key"
   | "deepseek-web"
   | "doubao-web"
-  | "doubao-proxy"
   | "claude-web"
   | "custom-api-key"
   | "skip";

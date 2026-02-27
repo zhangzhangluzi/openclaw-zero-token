@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.19",
+    "lastTouchedAt": "2026-02-26T00:00:00.000Z"
+  },
+  "wizard": {
+    "lastRunAt": "2026-02-26T00:00:00.000Z",
+    "lastRunVersion": "2026.2.19",
+    "lastRunCommand": "onboard",
+    "lastRunMode": "local"
+  },
+  "browser": {
+    "attachOnly": true,
+    "defaultProfile": "my-chrome",
+    "profiles": {
+      "my-chrome": {
+        "cdpUrl": "http://127.0.0.1:9222",
+        "color": "#4285F4"
+      }
+    }
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "claude-web": {
+        "baseUrl": "https://claude.ai",
+        "api": "claude-web",
+        "models": [
+          {
+            "id": "claude-3-5-sonnet-20241022",
+            "name": "Claude 3.5 Sonnet (Web)",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "claude-web/claude-3-5-sonnet-20241022"
+      },
+      "models": {
+        "claude-web/claude-3-5-sonnet-20241022": {
+          "alias": "Claude Web"
+        }
+      },
+      "workspace": "/Users/YOUR_USERNAME/Documents/openclaw-zero-token/.openclaw-state/workspace"
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true
+  },
+  "gateway": {
+    "port": 3001,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "YOUR_GATEWAY_TOKEN_HERE"
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "http": {
+      "endpoints": {
+        "chatCompletions": {
+          "enabled": true
+        }
+      }
+    }
+  }
+}

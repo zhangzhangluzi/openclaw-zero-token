@@ -1085,43 +1085,6 @@ export async function resolveImplicitProviders(params: {
     apiKey: claudeWebKey,
   };
 
-  const doubaoProxyKey =
-    resolveEnvApiKeyVarName("doubao-proxy") ??
-    resolveApiKeyFromProfiles({ provider: "doubao-proxy", store: authStore });
-
-  if (doubaoProxyKey) {
-    const existingProvider = params.explicitProviders?.["doubao-proxy"] as
-      | { baseUrl?: string; models?: ModelDefinitionConfig[] }
-      | undefined;
-    let baseUrl =
-      typeof existingProvider?.baseUrl === "string" && existingProvider.baseUrl.trim()
-        ? existingProvider.baseUrl.trim().replace(/\/+$/, "")
-        : "http://127.0.0.1:8000";
-    if (!baseUrl.endsWith("/v1")) {
-      baseUrl = `${baseUrl}/v1`;
-    }
-    const models: ModelDefinitionConfig[] =
-      Array.isArray(existingProvider?.models) && existingProvider.models.length > 0
-        ? existingProvider.models
-        : [
-            {
-              id: "doubao",
-              name: "Doubao (via proxy)",
-              reasoning: false,
-              input: ["text"],
-              cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-              contextWindow: 64000,
-              maxTokens: 8192,
-            },
-          ];
-    providers["doubao-proxy"] = {
-      baseUrl,
-      api: "openai-completions",
-      apiKey: doubaoProxyKey,
-      models,
-    };
-  }
-
   return providers;
 }
 
