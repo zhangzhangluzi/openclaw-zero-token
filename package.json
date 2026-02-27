@@ -36,7 +36,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm canvas:a2ui:bundle && tsdown && (test -f tsconfig.plugin-sdk.dts.json && pnpm run build:plugin-sdk:dts && node --import tsx scripts/write-plugin-sdk-entry-dts.ts || true) && node --import tsx scripts/canvas-a2ui-copy.ts && node --import tsx scripts/copy-hook-metadata.ts && node --import tsx scripts/copy-export-html-templates.ts && node --import tsx scripts/write-build-info.ts && node --import tsx scripts/write-cli-compat.ts",
+    "build": "npm run canvas:a2ui:bundle && tsdown && (test -f tsconfig.plugin-sdk.dts.json && npm run build:plugin-sdk:dts && node --import tsx scripts/write-plugin-sdk-entry-dts.ts || true) && node --import tsx scripts/canvas-a2ui-copy.ts && node --import tsx scripts/copy-hook-metadata.ts && node --import tsx scripts/copy-export-html-templates.ts && node --import tsx scripts/write-build-info.ts && node --import tsx scripts/write-cli-compat.ts",
     "build:plugin-sdk:dts": "tsc -p tsconfig.plugin-sdk.dts.json",
     "canvas:a2ui:bundle": "node scripts/bundle-a2ui.mjs",
     "check": "pnpm format:check && pnpm tsgo && pnpm lint",
@@ -65,7 +65,7 @@
     "lint:fix": "oxlint --type-aware --fix && pnpm format",
     "lint:swift": "swiftlint lint --config .swiftlint.yml && (cd apps/ios && swiftlint lint --config .swiftlint.yml)",
     "openclaw": "node scripts/run-node.mjs",
-    "prepack": "pnpm build && pnpm ui:build",
+    "prepack": "npm run build && npm run ui:build",
     "prepare": "command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath git-hooks || exit 0",
     "protocol:check": "pnpm protocol:gen && pnpm protocol:gen:swift && git diff --exit-code -- dist/protocol.schema.json apps/macos/Sources/OpenClawProtocol/GatewayModels.swift",
     "protocol:gen": "node --import tsx scripts/protocol-gen.ts",
