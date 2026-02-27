@@ -23,7 +23,7 @@ function hasCommand(cmd) {
 }
 
 function runTool(tool, args, cwd) {
-  const quotedArgs = args.map((arg) => `"${String(arg).replace(/"/g, '\\\"')}"`).join(" ");
+  const quotedArgs = args.map((arg) => `"${String(arg).replace(/"/g, '\"')}"`).join(" ");
 
   if (hasCommand("pnpm")) {
     execSync(`pnpm -s exec ${tool} ${quotedArgs}`, { stdio: "inherit", cwd });
