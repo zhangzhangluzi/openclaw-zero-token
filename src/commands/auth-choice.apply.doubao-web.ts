@@ -68,17 +68,7 @@ export async function applyAuthChoiceDoubaoWeb(
           sessionid: result.sessionid,
           ttwid: result.ttwid,
           userAgent: result.userAgent,
-          fp: result.fp,
-          tea_uuid: result.tea_uuid,
-          device_id: result.device_id,
-          web_tab_id: result.web_tab_id,
-          msToken: result.msToken,
-          a_bogus: result.a_bogus,
-          aid: result.aid,
-          version_code: result.version_code,
-          pc_version: result.pc_version,
-          region: result.region,
-          language: result.language,
+          cookie: result.cookie,
         });
         await setDoubaoWebCookie({ cookie: authData }, agentDir);
       } catch (err) {
@@ -109,12 +99,7 @@ export async function applyAuthChoiceDoubaoWeb(
           sessionid: result.sessionid,
           ttwid: result.ttwid,
           userAgent: result.userAgent,
-          fp: result.fp,
-          tea_uuid: result.tea_uuid,
-          device_id: result.device_id,
-          web_tab_id: result.web_tab_id,
-          msToken: result.msToken,
-          a_bogus: result.a_bogus,
+          cookie: result.cookie,
         });
         await setDoubaoWebCookie({ cookie: authData }, agentDir);
       } catch (err) {
@@ -159,7 +144,6 @@ export async function applyAuthChoiceDoubaoWeb(
         sessionid,
         ttwid: ttwid || undefined,
         userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        // 手动模式无法获取动态参数，需要后续从浏览器中提取
       });
       await setDoubaoWebCookie({ cookie: authData }, agentDir);
     }

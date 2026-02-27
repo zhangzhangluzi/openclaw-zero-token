@@ -181,8 +181,8 @@ const AUTH_CHOICE_GROUP_DEFS: {
   {
     value: "doubao-web",
     label: "Doubao",
-    hint: "doubao-proxy (recommended) or direct Browser",
-    choices: ["doubao-proxy", "doubao-web"],
+    hint: "Browser-based authentication",
+    choices: ["doubao-web"],
   },
   {
     value: "claude-web",
@@ -342,14 +342,9 @@ const BASE_AUTH_CHOICE_OPTIONS: ReadonlyArray<AuthChoiceOption> = [
     hint: "Access DeepSeek V3/R1 via logged-in session",
   },
   {
-    value: "doubao-proxy",
-    label: "Doubao via doubao-free-api (recommended)",
-    hint: "Deploy doubao-free-api, paste sessionid as Bearer",
-  },
-  {
     value: "doubao-web",
-    label: "Doubao Browser (direct)",
-    hint: "Access Doubao via logged-in session (experimental)",
+    label: "Doubao Browser",
+    hint: "Access Doubao via browser session (like Claude)",
   },
   {
     value: "claude-web",

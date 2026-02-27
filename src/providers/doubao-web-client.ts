@@ -57,7 +57,7 @@ export interface DoubaoChatResponse {
 }
 
 const DOUBAO_API_BASE = "https://www.doubao.com";
-/** 与 doubao-free-api 一致，使用 /samantha/chat/completion 可拿到流式正文 */
+/** 使用 /samantha/chat/completion 端点获取流式响应 */
 const USE_SAMANTHA_API = true;
 
 export interface DoubaoWebClientConfig {
@@ -471,7 +471,7 @@ export class DoubaoWebClient {
   }
 
   /**
-   * doubao-free-api / samantha 接口：每行 JSON 含 event_type、event_data。
+   * 豆包 samantha API 响应格式：每行 JSON 含 event_type、event_data。
    * event_type 2001=数据块，event_data 为 JSON 字符串，内有 message.content（再解析得 {text}）；2003=结束。
    */
   private extractTextFromSamanthaLine(line: string): string[] {
@@ -548,7 +548,7 @@ export class DoubaoWebClient {
           continue;
         }
 
-        // doubao-free-api / samantha 格式：整行为 JSON 或 "data: {...}"，含 event_type、event_data
+        // 豆包 samantha API 格式：整行为 JSON 或 "data: {...}"，含 event_type、event_data
         const dataLine = trimmed.startsWith("data: ") ? trimmed.slice(6).trim() : trimmed;
         const samanthaChunks = this.extractTextFromSamanthaLine(dataLine);
         if (samanthaChunks.length > 0) {

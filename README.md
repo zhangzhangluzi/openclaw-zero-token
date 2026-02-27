@@ -26,11 +26,11 @@ OpenClaw Zero Token is a fork of [OpenClaw](https://github.com/openclaw/openclaw
 | Platform | Status | Models |
 |----------|--------|--------|
 | DeepSeek | ✅ **Currently Supported** | deepseek-chat, deepseek-reasoner |
-| Doubao (豆包) | ✅ **Currently Supported** | doubao (via doubao-free-api) |
+| Doubao (豆包) | ✅ **Currently Supported** | doubao-seed-2.0, doubao-pro |
 | Claude Web | ✅ **Currently Supported** | claude-3-5-sonnet-20241022, claude-3-opus-20240229, claude-3-haiku-20240307 |
 | ChatGPT Web | 🔜 Coming Soon | - |
 
-> **Note:** Doubao requires [doubao-free-api](https://github.com/linuxhsj/doubao-free-api) proxy. See "Doubao Implementation & Deployment" below for details.
+> **Note:** All web-based providers use browser automation (Playwright) for authentication and API access.
 
 ---
 
@@ -56,7 +56,7 @@ OpenClaw Zero Token is a fork of [OpenClaw](https://github.com/openclaw/openclaw
 │  ┌─────────────────────────────────┼─────────────────────────────────────┐  │
 │  │                          Provider Layer                               │  │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │  │
-│  │  │ DeepSeek Web │  │ Doubao Proxy │  │   OpenAI     │  │ Anthropic   │  │  │
+│  │  │ DeepSeek Web │  │  Doubao Web  │  │   OpenAI     │  │ Anthropic   │  │  │
 │  │  │ (Zero Token) │  │ (Zero Token) │  │   (Token)    │  │  (Token)    │  │  │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
@@ -119,128 +119,143 @@ OpenClaw Zero Token is a fork of [OpenClaw](https://github.com/openclaw/openclaw
 
 ---
 
-## Doubao Implementation & Deployment
+## Doubao Web Usage
 
-### Overview
+Doubao integration uses **browser automation** (Playwright) for authentication and API access, similar to Claude Web.
 
-Doubao integration uses **web Cookie authentication** (no official API key required):
-
-```
-Browser login → Get sessionid (F12 → Application → Cookies) →
-  doubao-proxy: Pass sessionid to local proxy, proxy calls Doubao API internally
-  doubao-web: Direct Cookie-based requests to Doubao internal API (fallback, SSE format may change)
-```
-
-**Recommended: doubao-proxy** — Use [doubao-free-api](https://github.com/linuxhsj/doubao-free-api) for an OpenAI-compatible interface; more stable and easier to debug.
-
-### Two Approaches Compared
-
-| Approach | Recommended | API Endpoint | Auth | Request/Response |
-|----------|-------------|--------------|------|-------------------|
-| **doubao-proxy** | ★ Yes | Local `http://127.0.0.1:8000/v1/chat/completions` | Bearer Token (sessionid) | Standard OpenAI format |
-| **doubao-web** | Fallback | `https://www.doubao.com/...` direct | Cookie (sessionid, ttwid, etc.) | Doubao custom SSE |
-
-### Code Structure
+### How It Works
 
 ```
-src/
-├── providers/
-│   ├── doubao-web-auth.ts      # Browser login & credential capture
-│   └── doubao-web-client.ts    # Doubao web API client (for doubao-web)
-├── agents/
-│   ├── doubao-web-stream.ts    # doubao-web streaming response parser
-│   └── models-config.providers.ts  # doubao-proxy registration (api: openai-completions)
-└── commands/
-    ├── auth-choice.apply.doubao-proxy.ts   # doubao-proxy setup flow
-    ├── auth-choice.apply.doubao-web.ts     # doubao-web setup flow
-    └── onboard-auth.config-core.ts         # applyDoubaoProxyConfig etc.
+Browser Login (Playwright)
+    ↓
+Capture sessionid & ttwid (Cookies)
+    ↓
+Keep Browser Connection Open
+    ↓
+Execute Requests in Browser Context (page.evaluate)
+    ↓
+Doubao API Response (SSE Stream)
 ```
 
-### doubao-free-api Deployment
+**Key Features:**
+- ✅ **No Proxy Required**: Direct browser-based access
+- ✅ **Automatic Parameter Handling**: Browser generates dynamic parameters (msToken, a_bogus, fp, etc.)
+- ✅ **Cloudflare Bypass**: Requests sent in real browser context
+- ✅ **Simple Authentication**: Only needs sessionid and ttwid
+- ✅ **Streaming Support**: Real-time response streaming
 
-Use [linuxhsj/doubao-free-api](https://github.com/linuxhsj/doubao-free-api). Supports text-to-image, image-to-image, image understanding, etc.
-
-#### Get sessionid
-
-1. Open [https://www.doubao.com](https://www.doubao.com) and log in
-2. Press F12 → Application → Cookies
-3. Copy the `sessionid` value
-
-#### Native Deployment (Recommended)
+### Quick Start
 
 ```bash
-git clone https://github.com/linuxhsj/doubao-free-api.git
-cd doubao-free-api
-npm i
-npm run build
-npm start   # or: pm2 start dist/index.js --name doubao-free-api
+# Step 1: Start Chrome in debug mode
+./start-chrome-debug.sh
+
+# Step 2: Configure Doubao (in another terminal)
+./onboard.sh
+# Select: Doubao -> Automated Login
+
+# Step 3: Start Gateway
+./server.sh start
+
+# Step 4: Test
+./test-doubao.sh "你好"
+
+# Or open Web UI
+open http://127.0.0.1:3001
 ```
 
-#### Docker Deployment
+### Available Models
 
+| Model ID | Name | Features |
+|----------|------|----------|
+| `doubao-seed-2.0` | Doubao-Seed 2.0 | Supports reasoning |
+| `doubao-pro` | Doubao Pro | Standard model |
+
+### Configuration
+
+The configuration is stored in `.openclaw-state/openclaw.json`:
+
+```json
+{
+  "browser": {
+    "attachOnly": true,
+    "defaultProfile": "my-chrome",
+    "profiles": {
+      "my-chrome": {
+        "cdpUrl": "http://127.0.0.1:9222"
+      }
+    }
+  },
+  "models": {
+    "providers": {
+      "doubao-web": {
+        "baseUrl": "https://www.doubao.com",
+        "api": "doubao-web",
+        "models": [
+          {
+            "id": "doubao-seed-2.0",
+            "name": "Doubao-Seed 2.0 (Web)"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### Troubleshooting
+
+**Chrome connection failed:**
 ```bash
-docker run -it -d --init --name doubao-free-api -p 8000:8000 \
-  -e TZ=Asia/Shanghai linuxhsj/doubao-free-api:latest
+# Check if Chrome is running
+ps aux | grep "chrome.*9222"
 
-docker logs -f doubao-free-api
+# Restart Chrome
+pkill -f "chrome.*9222"
+./start-chrome-debug.sh
 ```
 
-#### Docker Compose
+**No response from Doubao:**
+- Ensure Chrome window is open with Doubao.com loaded
+- Check Gateway logs: `tail -50 /tmp/openclaw-gateway.log`
+- Run diagnostics: `./diagnose-doubao.sh`
+- Restart Gateway: `./server.sh restart`
 
-```yaml
-version: '3'
-services:
-  doubao-free-api:
-    container_name: doubao-free-api
-    image: linuxhsj/doubao-free-api:latest
-    restart: always
-    ports:
-      - "8000:8000"
-    environment:
-      - TZ=Asia/Shanghai
-```
+**Session expired:**
+- Re-run onboarding: `./onboard.sh`
+- Select Doubao and login again
 
-#### OpenClaw Configuration
+### Technical Details
 
-1. Run `node openclaw.mjs onboard`, select **Doubao** → **doubao-proxy**
-2. Default baseUrl: `http://127.0.0.1:8000/v1` (change if proxy runs elsewhere)
-3. Paste sessionid to finish setup
-
-#### Verification
-
-```bash
-curl -N -X POST "http://127.0.0.1:8000/v1/chat/completions" \
-  -H "Authorization: Bearer <sessionid>" \
-  -H "Content-Type: application/json" \
-  -d '{"model":"doubao","messages":[{"role":"user","content":"Hello"}],"stream":true}'
-```
-
-If SSE stream is returned, the proxy is working.
-
-### Auth & Config Storage
-
-| Location | Description |
-|----------|-------------|
-| `auth-profiles.json` | `doubao-proxy:default` → `key` is sessionid |
-| `openclaw.json` | `models.providers["doubao-proxy"].baseUrl`, `agents.defaults.model.primary` |
-| Env var | Optional `DOUBAO_PROXY_SESSIONID` |
-
-### Notes
-
-- **sessionid expiry**: Doubao sessions expire; re-login and update sessionid when needed
-- **Multi-account**: doubao-free-api supports `Authorization: Bearer sessionid1,sessionid2`
-- **Port**: Default 8000; ensure firewall/security group allows it
-- **Compliance**: Reverse API for personal use only; use [Volcengine official API](https://www.volcengine.com/product/doubao) for commercial use
+For detailed technical documentation, see [DOUBAO_REFACTOR_SUMMARY.md](DOUBAO_REFACTOR_SUMMARY.md):
+- Browser-based implementation following Claude's architecture
+- Simplified authentication (only sessionid + ttwid)
+- Code structure and modifications
 
 ---
 
 ## Quick Start
+
+> **Platform Support:**
+> - 🍎 **macOS**: 
+>   - 🚀 [Quick Start Guide](QUICK_START_MAC.md) - 5-step setup
+>   - 📖 [Detailed Setup Guide](SETUP_GUIDE_zh-CN.md) - Complete instructions (Cross-platform)
+>   - 🔍 [Chrome Debug Mode Explained](CHROME_DEBUG_MODE_EN.md) - Why can't I see my bookmarks?
+>   - ✅ Environment check: `./check-mac-setup.sh` or `./check-setup.sh`
+> - 🐧 **Linux**: Follow the same process as macOS (use `/home/` instead of `/Users/` for paths)
+>   - ✅ Environment check: `./check-setup.sh`
+> - 🪟 **Windows**: Recommended to use WSL2 (Windows Subsystem for Linux), then follow Linux process
+>   - WSL2 installation: `wsl --install` (one command, one reboot)
+>   - WSL2 guide: https://docs.microsoft.com/en-us/windows/wsl/install
+>   - ✅ Environment check: `./check-setup.sh`
+> - 📖 [Platform Support Details](PLATFORM_SUPPORT.md)
 
 ### Requirements
 
 - Node.js >= 22.12.0
 - pnpm >= 9.0.0
 - Chrome Browser
+- **OS**: macOS, Linux, or Windows (WSL2)
 
 ### Script Overview
 
@@ -253,27 +268,18 @@ This project provides several helper scripts for different use cases:
 │                                                                      │
 │  First Time Setup:                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐  │
-│  │ run.sh (One-click setup: build + configure + start)          │  │
-│  │    │                                                          │  │
-│  │    ├─→ pnpm build              # Compile project             │  │
-│  │    │                                                          │  │
-│  │    ├─→ onboard.sh               # Configuration wizard       │  │
-│  │    │       └─→ Select AI provider (DeepSeek/Doubao/Claude)  │  │
-│  │    │           Configure authentication                      │  │
-│  │    │           Save to .openclaw-state/openclaw.json         │  │
-│  │    │                                                          │  │
-│  │    └─→ server.sh start          # Start Gateway (port 3001)  │  │
+│  │ 1. pnpm install && pnpm build    # Install & compile         │  │
+│  │ 2. start-chrome-debug.sh         # Start Chrome debug mode   │  │
+│  │ 3. onboard.sh                    # Configuration wizard      │  │
+│  │ 4. server.sh start               # Start Gateway             │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                                                      │
-│  Testing Claude Web:                                                │
+│  Claude Web Usage:                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐  │
-│  │ test-all.sh (Test Claude Web functionality)                  │  │
-│  │    │                                                          │  │
-│  │    ├─→ start-chrome-debug.sh   # Start Chrome debug mode    │  │
-│  │    ├─→ test-chrome-connection.sh # Verify connection        │  │
-│  │    ├─→ server.sh stop           # Stop Gateway              │  │
-│  │    ├─→ Start Gateway            # Restart Gateway           │  │
-│  │    └─→ test-claude.sh           # Test Claude API           │  │
+│  │ 1. start-chrome-debug.sh   # Start Chrome debug mode        │  │
+│  │ 2. onboard.sh              # Configure Claude Web auth      │  │
+│  │ 3. server.sh start         # Start Gateway                  │  │
+│  │ 4. test-claude.sh "test"   # Test Claude API                │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                                                      │
 │  Daily Usage:                                                       │
@@ -289,10 +295,12 @@ This project provides several helper scripts for different use cases:
 
 | Script | Purpose | When to Use | Requires Build |
 |--------|---------|-------------|----------------|
-| `run.sh` | Build + Configure + Start | First time setup | ✅ Auto-builds |
+| `check-mac-setup.sh` | Environment check | Before first run | ❌ No build needed |
+| `start-chrome-debug.sh` | Start Chrome debug | For Claude Web | ❌ No build needed |
 | `onboard.sh` | Configuration wizard | Initial config or reconfigure | ❌ Build first |
-| `test-all.sh` | Test Claude Web | Verify Claude functionality | ❌ Build & configure first |
 | `server.sh` | Manage Gateway service | Daily start/stop/restart | ❌ Build & configure first |
+| `test-claude.sh` | Test Claude API | Verify functionality | ❌ Configure first |
+| `test-chrome-connection.sh` | Test Chrome connection | Troubleshooting | ❌ No build needed |
 
 ### Installation
 
@@ -305,19 +313,7 @@ cd openclaw-zero-token
 pnpm install
 ```
 
-### Option 1: One-Click Setup (Recommended for First Time)
-
-```bash
-# This will: build + configure + start
-./run.sh
-```
-
-The script will:
-1. Compile the project (`pnpm build`)
-2. Run configuration wizard (`onboard.sh`)
-3. Start Gateway service (`server.sh start`)
-
-### Option 2: Step-by-Step Setup
+### Installation Steps
 
 #### Step 1: Build
 
@@ -362,7 +358,49 @@ open http://127.0.0.1:3001
 
 ### Web UI
 
-Visit `http://127.0.0.1:3001` and start chatting with DeepSeek models directly.
+Visit `http://127.0.0.1:3001` and start chatting with AI models directly.
+
+#### Switching Models
+
+You can switch between different AI models using the `/model` command in the chat interface:
+
+```bash
+# Switch to Claude Web
+/model claude-web
+
+# Switch to Doubao
+/model doubao-web
+
+# Switch to DeepSeek
+/model deepseek-web
+
+# Or specify a specific model
+/model claude-web/claude-3-5-sonnet-20241022
+/model doubao-web/doubao-seed-2.0
+/model deepseek-web/deepseek-chat
+```
+
+#### Viewing Available Models
+
+To see all configured models, use the `/models` command:
+
+```bash
+/models
+```
+
+This will display:
+- All available providers (claude-web, doubao-web, deepseek-web, etc.)
+- Models under each provider
+- Current active model
+- Model aliases and configurations
+
+**Example output:**
+```
+Model                                      Input      Ctx      Local Auth  Tags
+doubao-web/doubao-seed-2.0                 text       63k      no    no    default,configured,alias:Doubao Browser
+claude-web/claude-3-5-sonnet-20241022      text+image 195k     no    no    configured,alias:Claude Web
+deepseek-web/deepseek-chat                 text       64k      no    no    configured
+```
 
 ### API Calls
 
@@ -388,22 +426,29 @@ node openclaw.mjs tui
 
 ## Claude Web Usage
 
-> **Note:** Before testing Claude Web, make sure you have completed the initial setup using `run.sh` or `onboard.sh` to configure Claude Web authentication. See [Script Overview](#script-overview) for the relationship between different scripts.
+> **Note:** Before testing Claude Web, make sure you have completed the initial setup using `onboard.sh` to configure Claude Web authentication. See [Script Overview](#script-overview) for the relationship between different scripts.
 
-### Quick Start (One-Click Test)
+### Quick Start (Manual Setup)
 
 ```bash
-# One-click test script (recommended)
-./test-all.sh
+# Step 1: Start Chrome in debug mode
+./start-chrome-debug.sh
 
-# Features:
-# - Automatically starts Chrome in debug mode
-# - Opens Claude.ai and waits for login
-# - Tests connection and API
-# - Opens Web UI automatically
+# Step 2: Wait for Chrome to open and login to Claude
+
+# Step 3: Configure (in another terminal)
+./onboard.sh
+# Select: Claude Web -> Automated Login
+
+# Step 4: Start Gateway
+./server.sh start
+
+# Step 5: Test
+./test-claude.sh "Hello, Claude!"
+
+# Or open Web UI
+open http://127.0.0.1:3001
 ```
-
-**What test-all.sh does:** See the [Script Flow](#testing-scripts) in the Testing Scripts section below.
 
 ### Manual Setup
 
@@ -547,38 +592,56 @@ curl http://127.0.0.1:3001/v1/chat/completions \
 ### Testing Scripts
 
 ```bash
-# One-click test (recommended)
-./test-all.sh
-
 # Test Chrome connection
 ./test-chrome-connection.sh
 
 # Test Claude API with custom message
 ./test-claude.sh "Your question here"
-
-# Test with random message (avoid detection)
-./test-claude.sh "$(shuf -n 1 test-messages.txt)"
 ```
-
-**test-all.sh Script Flow:**
-
-```
-test-all.sh
-    │
-    ├─→ start-chrome-debug.sh      # Start Chrome in debug mode (port 9222)
-    │
-    ├─→ test-chrome-connection.sh  # Verify Chrome debug connection
-    │
-    ├─→ server.sh stop              # Stop existing Gateway
-    │
-    ├─→ Start Gateway               # Launch Gateway service
-    │
-    └─→ test-claude.sh              # Test Claude API with message
-```
-
-The `test-all.sh` script automates the entire testing process, making it easy to verify your Claude Web setup with a single command.
 
 ### Troubleshooting
+
+**First Time Setup: Use Configuration Wizard**
+
+```bash
+./onboard.sh
+```
+
+**The configuration wizard will automatically create all required files and directories!**
+
+---
+
+**Fix Issues: Use Diagnostic Command**
+
+**If the project has been run before but you encounter issues, run the diagnostic command:**
+
+```bash
+node dist/index.mjs doctor
+```
+
+**The diagnostic command will automatically:**
+- ✅ Check all required directories
+- ✅ Create missing directories
+- ✅ Fix file permission issues
+- ✅ Check config file integrity
+- ✅ Detect multiple state directory conflicts
+- ✅ Provide detailed repair suggestions
+
+**⚠️ Important Limitations:**
+- ❌ `doctor` command will **NOT** create config files (`openclaw.json`)
+- ❌ `doctor` command will **NOT** create auth files (`auth-profiles.json`)
+- ✅ If config files are missing or corrupted, re-run `./onboard.sh`
+
+**When to use:**
+- Directories accidentally deleted
+- "Permission denied" errors
+- Verify environment is normal
+- Session history lost
+- **NOT for first-time setup** (use `onboard.sh` instead)
+
+**For detailed instructions:** See [Setup Guide - Troubleshooting](SETUP_GUIDE_zh-CN.md#common-issues)
+
+---
 
 **Chrome connection failed:**
 ```bash
@@ -669,7 +732,7 @@ node openclaw.mjs tui
 
 ### Current Focus
 - ✅ DeepSeek Web authentication (stable)
-- ✅ Doubao via doubao-free-api
+- ✅ Doubao Web browser-based authentication (stable)
 - ✅ Claude Web authentication (stable)
 - 🔧 Improving credential capture reliability
 - 📝 Documentation improvements

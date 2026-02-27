@@ -1,0 +1,210 @@
+# OpenClaw State Directory Example
+
+这是 `.openclaw-state/` 目录的示例配置文件。
+
+## 目录结构
+
+```
+.openclaw-state/
+├── openclaw.json                          # 主配置文件
+└── agents/
+    └── main/
+        └── agent/
+            └── auth-profiles.json         # 认证凭证（敏感信息）
+```
+
+## 重要说明
+
+⚠️ **`.openclaw-state/` 目录包含敏感信息，不应该提交到 Git！**
+
+- 已在 `.gitignore` 中排除
+- 包含认证凭证（sessionKey、cookie 等）
+- 包含个人配置和工作空间数据
+
+## 首次运行
+
+首次运行时，`.openclaw-state/` 目录会自动创建。
+
+### 自动创建（推荐）
+
+运行配置向导时会自动创建：
+
+```bash
+./onboard.sh
+```
+
+**自动创建的内容：**
+1. ✅ `.openclaw-state/` 目录
+2. ✅ `openclaw.json` 配置文件（空配置）
+3. ✅ `agents/main/agent/` 子目录
+4. ✅ `agents/main/sessions/` 会话目录
+5. ✅ `credentials/` 认证目录
+6. ✅ `auth-profiles.json` 认证凭证文件（配置完成后）
+
+**你需要做的：**
+1. 运行 `./onboard.sh`
+2. 选择 AI 提供商（如 Claude Web）
+3. 在浏览器中登录账号
+4. 等待系统自动保存凭证
+
+**完全不需要手动创建任何文件或目录！**
+
+### 手动创建（可选）
+
+如果需要手动创建：
+
+```bash
+mkdir -p .openclaw-state
+cp .openclaw-state.example/openclaw.json .openclaw-state/openclaw.json
+```
+
+然后编辑 `.openclaw-state/openclaw.json`，修改：
+- `workspace` 路径（改为你的实际路径）
+- `gateway.auth.token`（生成一个随机 token）
+
+## 配置文件说明
+
+### openclaw.json
+
+主配置文件，包含：
+
+- **browser**: 浏览器配置（CDP 连接）
+- **models**: AI 模型配置
+- **agents**: Agent 默认配置
+- **gateway**: Gateway 服务配置
+
+### auth-profiles.json
+
+认证凭证文件，包含：
+
+- Claude Web sessionKey
+- DeepSeek Web cookie
+- Doubao Web sessionid
+- 其他 API keys
+
+**格式示例：**
+
+```json
+{
+  "version": 1,
+  "profiles": {
+    "claude-web:default": {
+      "type": "api_key",
+      "provider": "claude-web",
+      "key": "{\"sessionKey\":\"sk-ant-sid02-...\",\"userAgent\":\"...\"}"
+    }
+  }
+}
+```
+
+## 路径配置
+
+### macOS
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "workspace": "/Users/YOUR_USERNAME/Documents/openclaw-zero-token/.openclaw-state/workspace"
+    }
+  }
+}
+```
+
+### Linux
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "workspace": "/home/YOUR_USERNAME/Documents/openclaw-zero-token/.openclaw-state/workspace"
+    }
+  }
+}
+```
+
+## 安全建议
+
+1. ✅ 确保 `.openclaw-state/` 在 `.gitignore` 中
+2. ✅ 不要分享 `auth-profiles.json` 文件
+3. ✅ 定期更新过期的认证凭证
+4. ✅ 使用强随机 Gateway Token
+
+## 故障排查
+
+### 首次运行：使用配置向导（推荐）
+
+**首次运行项目时，直接运行配置向导：**
+
+```bash
+./onboard.sh
+```
+
+**配置向导会自动创建：**
+- ✅ `.openclaw-state/` 目录
+- ✅ `openclaw.json` 配置文件
+- ✅ `agents/main/agent/` 目录
+- ✅ `agents/main/sessions/` 目录
+- ✅ `credentials/` 目录
+- ✅ `auth-profiles.json` 认证文件（配置完成后）
+
+**完全不需要手动创建任何文件或目录！**
+
+### 修复问题：使用诊断命令
+
+**如果项目已经运行过，但遇到目录或文件缺失问题，运行诊断命令：**
+
+```bash
+node dist/index.mjs doctor
+```
+
+**⚠️ 注意：`doctor` 命令只会：**
+- ✅ 检查和创建缺失的**目录**
+- ✅ 修复文件权限问题
+- ❌ **不会**创建配置文件（`openclaw.json`）
+- ❌ **不会**创建认证文件（`auth-profiles.json`）
+
+**使用场景：**
+- 目录被意外删除
+- 文件权限出现问题
+- 配置文件损坏（需要重新运行 `onboard.sh`）
+- 验证环境是否正常
+
+**示例输出：**
+```
+State integrity
+- CRITICAL: Sessions dir missing (~/.openclaw-state/agents/main/sessions)
+? Create Sessions dir at ~/.openclaw-state/agents/main/sessions? (Y/n)
+
+Doctor changes
+- Created Sessions dir: ~/.openclaw-state/agents/main/sessions
+- Tightened permissions on ~/.openclaw-state to 700
+```
+
+### 配置文件不存在或损坏
+
+```bash
+# 重新运行配置向导（会重新创建所有配置）
+./onboard.sh
+```
+
+### 路径错误
+
+检查并修改 `openclaw.json` 中的 `workspace` 路径：
+
+```bash
+# macOS
+sed -i '' 's|/home/|/Users/|g' .openclaw-state/openclaw.json
+
+# Linux
+sed -i 's|/Users/|/home/|g' .openclaw-state/openclaw.json
+```
+
+### 认证失败
+
+删除旧的认证文件，重新配置：
+
+```bash
+rm .openclaw-state/agents/main/agent/auth-profiles.json
+./onboard.sh
+```
