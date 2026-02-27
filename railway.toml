@@ -1,7 +1,0 @@
-[build]
-builder = "NIXPACKS"
-
-[deploy]
-startCommand = "node openclaw.mjs gateway --allow-unconfigured --bind lan --port $PORT --auth token --token $OPENCLAW_GATEWAY_TOKEN"
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10
