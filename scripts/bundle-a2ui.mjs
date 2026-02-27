@@ -22,33 +22,26 @@ function hasCommand(cmd) {
   }
 }
 
-function tryRun(command, cwd) {
-  try {
-    execSync(command, { stdio: "inherit", cwd });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function runTool(tool, args, cwd) {
-  const quotedArgs = args.map((arg) => `"${String(arg).replace(/"/g, '\\\"')}"`).join(" " );
+  const quotedArgs = args.map((arg) => `"${String(arg).replace(/"/g, '\\\"')}"`).join(" ");
 
-  // Prefer npm first because this script is commonly invoked via `npm run` in CI/Nixpacks.
-  if (hasCommand("npm") && tryRun(`npm exec -- ${tool} ${quotedArgs}`, cwd)) {
+  if (hasCommand("pnpm")) {
+    execSync(`pnpm -s exec ${tool} ${quotedArgs}`, { stdio: "inherit", cwd });
     return;
   }
 
-  if (hasCommand("pnpm") && tryRun(`pnpm -s exec ${tool} ${quotedArgs}`, cwd)) {
+  if (hasCommand("npm")) {
+    execSync(`npm exec -- ${tool} ${quotedArgs}`, { stdio: "inherit", cwd });
     return;
   }
 
-  // Last resort fallback for minimal runtimes.
-  if (hasCommand("npx") && tryRun(`npx --yes ${tool} ${quotedArgs}`, cwd)) {
+  // last-resort fallback for minimal runtimes
+  if (hasCommand("npx")) {
+    execSync(`npx --yes ${tool} ${quotedArgs}`, { stdio: "inherit", cwd });
     return;
   }
 
-  throw new Error(`Failed to run ${tool}. Tried npm exec, pnpm exec, and npx.`);
+  throw new Error(`No package manager found to run ${tool}. Install pnpm, npm, or npx.`);
 }
 
 
