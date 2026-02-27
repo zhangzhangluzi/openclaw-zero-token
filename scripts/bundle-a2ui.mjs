@@ -11,6 +11,40 @@ const OUTPUT_FILE = path.join(ROOT_DIR, "src/canvas-host/a2ui/a2ui.bundle.js");
 const A2UI_RENDERER_DIR = path.join(ROOT_DIR, "vendor/a2ui/renderers/lit");
 const A2UI_APP_DIR = path.join(ROOT_DIR, "apps/shared/OpenClawKit/Tools/CanvasA2UI");
 
+
+function hasCommand(cmd) {
+  const checker = process.platform === "win32" ? "where" : "command -v";
+  try {
+    execSync(`${checker} ${cmd}`, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function runTool(tool, args, cwd) {
+  const quotedArgs = args.map((arg) => `"${String(arg).replace(/"/g, '\\"')}"`).join(" ");
+
+  if (hasCommand("pnpm")) {
+    execSync(`pnpm -s exec ${tool} ${quotedArgs}`, { stdio: "inherit", cwd });
+    return;
+  }
+
+  if (hasCommand("npm")) {
+    execSync(`npm exec -- ${tool} ${quotedArgs}`, { stdio: "inherit", cwd });
+    return;
+  }
+
+  // last-resort fallback for minimal runtimes
+  if (hasCommand("npx")) {
+    execSync(`npx --yes ${tool} ${quotedArgs}`, { stdio: "inherit", cwd });
+    return;
+  }
+
+  throw new Error(`No package manager found to run ${tool}. Install pnpm, npm, or npx.`);
+}
+
+
 async function main() {
   try {
     // Check if sources exist
@@ -76,22 +110,25 @@ async function main() {
 
     console.log("Building A2UI bundle...");
 
-    // Run tsc
-    execSync(`pnpm -s exec tsc -p "${path.join(A2UI_RENDERER_DIR, "tsconfig.json")}"`, {
-      stdio: "inherit",
-      cwd: ROOT_DIR,
-    });
+    try {
+      // Run tsc
+      runTool("tsc", ["-p", path.join(A2UI_RENDERER_DIR, "tsconfig.json")], ROOT_DIR);
 
-    // Run rolldown
-    execSync(`pnpm exec rolldown -c "${path.join(A2UI_APP_DIR, "rolldown.config.mjs")}"`, {
-      stdio: "inherit",
-      cwd: ROOT_DIR,
-    });
+      // Run rolldown
+      runTool("rolldown", ["-c", path.join(A2UI_APP_DIR, "rolldown.config.mjs")], ROOT_DIR);
 
-    await fs.writeFile(HASH_FILE, current_hash);
-    console.log("A2UI bundle built successfully.");
+      await fs.writeFile(HASH_FILE, current_hash);
+      console.log("A2UI bundle built successfully.");
+    } catch (toolErr) {
+      if (existsSync(OUTPUT_FILE)) {
+        console.warn("A2UI toolchain unavailable; using prebuilt bundle.");
+        console.warn(String(toolErr));
+        process.exit(0);
+      }
+      throw toolErr;
+    }
   } catch (err) {
-    console.error("A2UI bundling failed. Re-run with: pnpm canvas:a2ui:bundle");
+    console.error("A2UI bundling failed. Re-run with: npm run canvas:a2ui:bundle (or pnpm canvas:a2ui:bundle).");
     console.error(err);
     process.exit(1);
   }
