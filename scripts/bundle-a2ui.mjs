@@ -110,23 +110,14 @@ async function main() {
 
     console.log("Building A2UI bundle...");
 
-    try {
-      // Run tsc
-      runTool("tsc", ["-p", path.join(A2UI_RENDERER_DIR, "tsconfig.json")], ROOT_DIR);
+    // Run tsc
+    runTool("tsc", ["-p", path.join(A2UI_RENDERER_DIR, "tsconfig.json")], ROOT_DIR);
 
-      // Run rolldown
-      runTool("rolldown", ["-c", path.join(A2UI_APP_DIR, "rolldown.config.mjs")], ROOT_DIR);
+    // Run rolldown
+    runTool("rolldown", ["-c", path.join(A2UI_APP_DIR, "rolldown.config.mjs")], ROOT_DIR);
 
-      await fs.writeFile(HASH_FILE, current_hash);
-      console.log("A2UI bundle built successfully.");
-    } catch (toolErr) {
-      if (existsSync(OUTPUT_FILE)) {
-        console.warn("A2UI toolchain unavailable; using prebuilt bundle.");
-        console.warn(String(toolErr));
-        process.exit(0);
-      }
-      throw toolErr;
-    }
+    await fs.writeFile(HASH_FILE, current_hash);
+    console.log("A2UI bundle built successfully.");
   } catch (err) {
     console.error("A2UI bundling failed. Re-run with: npm run canvas:a2ui:bundle (or pnpm canvas:a2ui:bundle).");
     console.error(err);
