@@ -23,10 +23,17 @@
       "mode": "token",
       "token": "replace-with-a-long-random-token"
     },
+    "http": {
+      "endpoints": {
+        "chatCompletions": { "enabled": true }
+      }
+    },
     "trustedProxies": ["127.0.0.1", "::1"]
   }
 }
 ```
+
+> 若需要使用 `/v1/chat/completions`，必须显式开启 `gateway.http.endpoints.chatCompletions.enabled=true`；未配置时该端点默认关闭。
 
 ## 2) Railway 最小化部署
 
@@ -37,6 +44,20 @@
 OPENCLAW_PROFILE=prod
 OPENCLAW_GATEWAY_TOKEN=<一段长随机串>
 OPENCLAW_STATE_DIR=/data/openclaw-state
+```
+
+并在仓库根目录提供 `openclaw.json`（或你指定的配置文件），至少包含：
+
+```json
+{
+  "gateway": {
+    "http": {
+      "endpoints": {
+        "chatCompletions": { "enabled": true }
+      }
+    }
+  }
+}
 ```
 
 3. 挂载 Volume（例如挂载到 `/data`）用于会话持久化
@@ -80,4 +101,3 @@ Railway 无 GUI 浏览器是常见限制，推荐以下方案：
 - **重启后失效**：通常是 Volume 或 `OPENCLAW_STATE_DIR` 配置错误。
 - **401/会话过期**：上游 Web 会话过期，需在可浏览器环境重新登录刷新。
 - **启动要求 onboarding**：生产启动命令不要触发登录流程，只运行 `gateway`。
-
